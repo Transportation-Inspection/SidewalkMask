@@ -66,7 +66,7 @@ def main():
 
 
 
-    rasterize_sidewalk_polygons(sidewalk_polygons, affine_scale, image_w, image_h)
+    # rasterize_sidewalk_polygons(sidewalk_polygons, affine_scale, image_w, image_h)
 
 
 if __name__ == '__main__':
