@@ -29,7 +29,7 @@ def get_intersecting_sidewalk_polygons(lat, lng):
         (lng + delta, lat + delta)
     ])
 
-    sidewalk_layer_filename = "./data/sidewalk_vector_files/dc/Polygon.shp"
+    sidewalk_layer_filename = "../data/sidewalk_vector_files/dc/Polygon.shp"
     sidewalks = fiona.open(sidewalk_layer_filename)
 
     project = partial(
