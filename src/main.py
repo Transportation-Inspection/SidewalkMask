@@ -29,6 +29,7 @@ def rasterize_sidewalk_polygons(sidewalk_polygons, affine, image_w, image_h):
     """
 
     out = features.rasterize(sidewalk_polygons, transform=affine, out_shape=(image_w, image_h))
+    out *= 255
     with rasterio.open(
             '../data/output/test.tif',
             'w',
@@ -50,27 +51,35 @@ def main():
     zoom = 20
     image_bound = get_image_bounding_coordinates(center_lat, center_lng, image_w=image_w, image_h=image_h, zoom=zoom)
 
-    sidewalk_polygons = get_intersecting_sidewalk_polygons(center_lat, center_lng)
+    sidewalk_polygons = get_intersecting_sidewalk_polygons(image_bound)
 
     # Prepare an affine transformation matrix to map latlng points to pixel coordinates
     lng1, lng2 = image_bound.sw.lng, image_bound.ne.lng
     lat1, lat2 = image_bound.sw.lat, image_bound.ne.lat
     x_scale = image_w / (lng2 - lng1)
-    y_scale = - (image_h / (lat2 - lat1))  # flip y-coordinate
+    y_scale = - image_h / (lat2 - lat1)
 
     affine_translate = Affine.translation(-lng1, -lat2)
     affine_scale = Affine.scale(x_scale, y_scale)
-    affine_mirror = Affine(1, 0, 0, 0, -1, image_h)
-    affine_transform = affine_mirror * affine_scale * affine_translate
+    # affine_mirror = Affine(1, 0, 0, 0, -1, image_h)
+    affine_transform = affine_scale * affine_translate
 
-    def transform_from_corner(ulx, uly, dx, dy):
-        return Affine.translation(ulx, uly) * Affine.scale(dx, -dy)
-    trans = transform_from_corner(lng1, lat2, 1.0/3600, 1.0/3600)
-    output = rasterio.features.rasterize(sidewalk_polygons, transform=trans, out_shape=(3961, 4969))
+    # Get the bound of the polygons
+    bound = get_vector_bound(sidewalk_polygons, affine_transform)
+    bound = (
+        min(math.floor(bound[0]), 0),
+        min(math.floor(bound[1]), 0),
+        max(math.ceil(bound[2]), image_w),
+        max(math.ceil(bound[3]), image_w)
+    )
+    mask_width = bound[2] - bound[0]
+    mask_height = bound[3] - bound[1]
 
+    affine_translate2 = Affine.translation(-bound[0], -bound[1])
+    affine_transform2 = affine_translate2 * affine_transform
 
     # Todo. Maybe all the polygons need to be inside the bound?
-    rasterize_sidewalk_polygons(sidewalk_polygons, affine_transform, image_w, image_h)
+    rasterize_sidewalk_polygons(sidewalk_polygons, affine_transform2.__invert__(), mask_width, mask_height)
 
     # for polygon in sidewalk_polygons:
     #
@@ -78,7 +87,17 @@ def main():
     #         print("%s,%s" % (str(point[1]), str(point[0])))
 
 
-
+def get_vector_bound(polygons, affine_transform):
+    """Transform the polygons in geographical coordinate system (i.e., latlng coordinates) to pixel values.
+    Get the minimum and maximum values in both X and Y direction
+    """
+    coords = []
+    for polygon in polygons:
+        coords.extend([list(coord) for coord in polygon.exterior.coords])
+    affine_transform.itransform(coords)
+    xs = [coord[0] for coord in coords]
+    ys = [coord[1] for coord in coords]
+    return (min(xs), min(ys), max(xs), max(ys))
 
 
 def test():

@@ -10,7 +10,7 @@ from shapely import ops
 from shapely.geometry.polygon import Polygon
 
 
-def get_intersecting_sidewalk_polygons(lat, lng):
+def get_intersecting_sidewalk_polygons(image_bound):
     """
     Reference
     http://gis.stackexchange.com/questions/121441/convert-shapely-polygon-coordinates
@@ -23,10 +23,10 @@ def get_intersecting_sidewalk_polygons(lat, lng):
     delta = 0.001
 
     target_area = Polygon([
-        (lng - delta, lat - delta),
-        (lng - delta, lat + delta),
-        (lng + delta, lat + delta),
-        (lng + delta, lat + delta)
+        (image_bound.nw.lng, image_bound.nw.lat),
+        (image_bound.ne.lng, image_bound.ne.lat),
+        (image_bound.se.lng, image_bound.se.lat),
+        (image_bound.sw.lng, image_bound.sw.lat)
     ])
 
     sidewalk_layer_filename = "../data/sidewalk_vector_files/dc/Polygon.shp"
