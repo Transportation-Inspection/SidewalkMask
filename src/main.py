@@ -64,6 +64,9 @@ def main():
     # affine_mirror = Affine(1, 0, 0, 0, -1, image_h)
     affine_transform = affine_scale * affine_translate
 
+    rasterize_sidewalk_polygons(sidewalk_polygons, affine_transform.__invert__(), image_w, image_h)
+
+    """
     # Get the bound of the polygons
     bound = get_vector_bound(sidewalk_polygons, affine_transform)
     bound = (
@@ -77,15 +80,8 @@ def main():
 
     affine_translate2 = Affine.translation(-bound[0], -bound[1])
     affine_transform2 = affine_translate2 * affine_transform
-
-    # Todo. Maybe all the polygons need to be inside the bound?
     rasterize_sidewalk_polygons(sidewalk_polygons, affine_transform2.__invert__(), mask_width, mask_height)
-
-    # for polygon in sidewalk_polygons:
-    #
-    #     for point in polygon.exterior.coords:
-    #         print("%s,%s" % (str(point[1]), str(point[0])))
-
+    """
 
 def get_vector_bound(polygons, affine_transform):
     """Transform the polygons in geographical coordinate system (i.e., latlng coordinates) to pixel values.
