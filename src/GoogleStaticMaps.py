@@ -1,8 +1,3 @@
-"""
-Google Statisc Maps Conversion code from:
-    http://gis.stackexchange.com/questions/46729/corner-coordinates-of-google-static-map-tile
-"""
-
 from BoundingBox import BoundingBox
 
 import math
@@ -43,7 +38,8 @@ class GoogleStaticMaps(object):
         url += "&".join(parameters)
         return url
 
-    def save_google_static_maps_image(self, url: str, output_dir="../data/output/google_static_maps/images/") -> None:
+    def fetch_google_static_maps_image(self, output_dir="../data/output/google_static_maps/images/") -> None:
+        url = self._get_google_static_maps_url()
         identifier = self.get_identifier()
         output_filename = output_dir + identifier + ".png"
         urllib.request.urlretrieve(url, output_filename)
@@ -112,83 +108,8 @@ class GoogleStaticMaps(object):
             f.write(description)
         return
 
-    def fetch_google_static_maps_image(self) -> None:
-        """Fetch Google Static Maps Image
-        """
-        url = self._get_google_static_maps_url()
-        #self.save_google_static_maps_image(url)
-        #self.save_meta_data()
-        return
-
-
-
-def get_resolution(zoom: int) -> float:
-    return initial_resolution / (2 ** zoom)
-
-
-def lat_lon_to_meters(lat, lon):
-    """
-    """
-    mx = lon * origin_shift / 180.0
-    my = math.log( math.tan((90 + lat) * math.pi / 360.0 )) / (math.pi / 180.0)
-    my = my * origin_shift / 180.0
-    return mx, my
-
-
-def meters_to_pixels(mx, my, zoom):
-    """
-    """
-    res = get_resolution(zoom)
-    px = (mx + origin_shift) / res
-    py = (my + origin_shift) / res
-    return px, py
-
-
-
-
-def pixels_to_meters(px, py, zoom):
-    res = get_resolution(zoom)
-    mx = px * res - origin_shift
-    my = py * res - origin_shift
-    return mx, my
-
-
-def meters_to_lat_lon(mx, my):
-    lon = (mx / origin_shift) * 180.0
-    lat = (my / origin_shift) * 180.0
-
-    lat = 180 / math.pi * (2 * math.atan(math.exp(lat * math.pi / 180.0)) - math.pi / 2.0)
-    return lat, lon
-
-
-def get_image_bounding_coordinates(center_lat, center_lng, image_h, image_w, zoom):
-    mx, my = lat_lon_to_meters(center_lat, center_lng)
-    pixel_x, pixel_y = meters_to_pixels(mx, my, zoom)
-    nw_pixel_x, nw_pixel_y = pixel_x - image_w / 2, pixel_y + image_h / 2
-    ne_pixel_x, ne_pixel_y = pixel_x + image_w / 2, pixel_y + image_h / 2
-    sw_pixel_x, sw_pixel_y = pixel_x - image_w / 2, pixel_y - image_h / 2
-    se_pixel_x, se_pixel_y = pixel_x + image_w / 2, pixel_y - image_h / 2
-
-    nw_meter_x, nw_meter_y = pixels_to_meters(nw_pixel_x, nw_pixel_y, zoom)
-    ne_meter_x, ne_meter_y = pixels_to_meters(ne_pixel_x, ne_pixel_y, zoom)
-    sw_meter_x, sw_meter_y = pixels_to_meters(sw_pixel_x, sw_pixel_y, zoom)
-    se_meter_x, se_meter_y = pixels_to_meters(se_pixel_x, se_pixel_y, zoom)
-
-    nw_lat, nw_lng = meters_to_lat_lon(nw_meter_x, nw_meter_y)
-    ne_lat, ne_lng = meters_to_lat_lon(ne_meter_x, ne_meter_y)
-    sw_lat, sw_lng = meters_to_lat_lon(sw_meter_x, sw_meter_y)
-    se_lat, se_lng = meters_to_lat_lon(se_meter_x, se_meter_y)
-
-    nw = LatLng(nw_lat, nw_lng)
-    ne = LatLng(ne_lat, ne_lng)
-    sw = LatLng(sw_lat, sw_lng)
-    se = LatLng(se_lat, se_lng)
-
-    return BoundingCoordinates(nw, ne, sw, se)
 
 if __name__ == '__main__':
     gsm = GoogleStaticMaps(38.910779, -77.046662)
-    # gsm.fetch_google_static_maps_image()
-    gsmm = GoogleStaticMapsMask(gsm)
-    gsmm.save_google_static_maps_mask_image()
+
 
