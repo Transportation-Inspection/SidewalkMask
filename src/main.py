@@ -115,12 +115,5 @@ def test():
 
     pass
 
-
-def geopandas_test():
-    pass
-
-
-def gis():
-    pass
 if __name__ == '__main__':
-    gis()
+    pass
