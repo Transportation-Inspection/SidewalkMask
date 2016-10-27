@@ -43,6 +43,15 @@ def rasterize_sidewalk_polygons(sidewalk_polygons, affine, image_w, image_h):
     return out
 
 
+class GStaticMaps(object):
+    def __init__(self, center_lat, center_lng):
+        self.center_lat, self.center_lng = center_lat, center_lng
+        self.image_w, self.image_h = 640, 640
+        self.zoom = 20
+
+    def __str__(self):
+        wh = "wh_%d,%d" % (self.image_w, self.image_h)
+        return wh
 
 
 def main():
@@ -107,5 +116,11 @@ def test():
     pass
 
 
+def geopandas_test():
+    pass
+
+
+def gis():
+    pass
 if __name__ == '__main__':
-    main()
+    gis()
