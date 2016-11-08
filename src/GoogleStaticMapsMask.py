@@ -57,9 +57,9 @@ class GoogleStaticMapsMask(object):
         inverse_transform = affine_transform.__invert__()
 
         road_raster = self._rasterize_polygons(road_polygons, inverse_transform)
-        road_raster *= 1
+        road_raster *= 128
         sidewalk_raster = self._rasterize_polygons(sidewalk_polygons, inverse_transform)
-        sidewalk_raster *= 2
+        sidewalk_raster *= 255
 
         road_raster[np.where(sidewalk_raster > 0)] = sidewalk_raster[np.where(sidewalk_raster > 0)]
 
