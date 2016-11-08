@@ -2,6 +2,7 @@ import rasterio
 from geoalchemy2.shape import to_shape
 from rasterio import features, Affine
 from GoogleStaticMaps import GoogleStaticMaps
+from RoadPolygon import RoadPolygon
 from SidewalkPolygon import SidewalkPolygon
 
 class GoogleStaticMapsMask(object):
@@ -10,26 +11,7 @@ class GoogleStaticMapsMask(object):
         self.google_static_maps = google_static_maps
         return
 
-    def save_google_static_maps_mask_image(self):
-        bounding_box = self.google_static_maps.get_image_bounding_box()
-
-        query = SidewalkPolygon.fetch_polygons_intersecting(bounding_box)
-        sidewalk_polygons = [to_shape(poly.geom) for poly in query]
-
-        from functools import partial
-        import pyproj
-        from shapely.ops import transform
-
-
-        proj4 = '+proj=lcc +lat_1=38.3 +lat_2=39.45 +lat_0=37.66666666666666 +lon_0=-77 +x_0=400000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs'
-        project = partial(
-            pyproj.transform,
-            pyproj.Proj(proj4),  # source coordinate system
-            pyproj.Proj(init='epsg:4326')
-        )  # destination coordinate system
-
-        sidewalk_polygons = [transform(project, polygon) for polygon in sidewalk_polygons]
-
+    def _get_affine_transform(self, bounding_box):
         lng1, lng2 = bounding_box.west, bounding_box.east
         lat1, lat2 = bounding_box.south, bounding_box.north
         x_scale = self.google_static_maps.image_w / (lng2 - lng1)
@@ -39,6 +21,39 @@ class GoogleStaticMapsMask(object):
         affine_scale = Affine.scale(x_scale, y_scale)
         # affine_mirror = Affine(1, 0, 0, 0, -1, image_h)
         affine_transform = affine_scale * affine_translate
+        return affine_transform
+
+    def save_google_static_maps_mask_image(self):
+        bounding_box = self.google_static_maps.get_image_bounding_box()
+
+        # Get sidewalk polygons
+        query = SidewalkPolygon.fetch_polygons_intersecting(bounding_box)
+        sidewalk_polygons = [to_shape(poly.geom) for poly in query]
+
+        from functools import partial
+        import pyproj
+        from shapely.ops import transform
+        proj4 = '+proj=lcc +lat_1=38.3 +lat_2=39.45 +lat_0=37.66666666666666 +lon_0=-77 +x_0=400000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs'
+        sidewalk_projection = partial(
+            pyproj.transform,
+            pyproj.Proj(proj4),  # source coordinate system
+            pyproj.Proj(init='epsg:4326')
+        )  # destination coordinate system
+
+        sidewalk_polygons = [transform(sidewalk_projection, polygon) for polygon in sidewalk_polygons]
+
+        affine_transform = self._get_affine_transform(bounding_box=bounding_box)
+
+
+        # lng1, lng2 = bounding_box.west, bounding_box.east
+        # lat1, lat2 = bounding_box.south, bounding_box.north
+        # x_scale = self.google_static_maps.image_w / (lng2 - lng1)
+        # y_scale = - self.google_static_maps.image_h / (lat2 - lat1)
+        #
+        # affine_translate = Affine.translation(-lng1, -lat2)
+        # affine_scale = Affine.scale(x_scale, y_scale)
+        # # affine_mirror = Affine(1, 0, 0, 0, -1, image_h)
+        # affine_transform = affine_scale * affine_translate
 
         self._rasterize_sidewalk_polygons(
             sidewalk_polygons,

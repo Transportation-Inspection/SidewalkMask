@@ -1,6 +1,7 @@
 from BoundingBox import BoundingBox
 
 import math
+import os
 import urllib.request
 from collections import namedtuple
 
@@ -39,14 +40,21 @@ class GoogleStaticMaps(object):
         return url
 
     def fetch_google_static_maps_image(self, output_dir="../data/output/google_static_maps/images/") -> None:
+        """Download and save an aerial image"""
+        if not os.path.isdir(output_dir):
+            os.makedirs(output_dir)
+
         url = self._get_google_static_maps_url()
         identifier = self.get_identifier()
         output_filename = output_dir + identifier + ".png"
         urllib.request.urlretrieve(url, output_filename)
         return
 
+    def _get_resolution(self, zoom: int) -> float:
+        return initial_resolution / (2 ** zoom)
+
     def _pixels_to_meters(self, px: int, zoom: int) -> float:
-        res = get_resolution(zoom)
+        res = self._get_resolution(zoom)
         return px * res - origin_shift
 
     def _meters_to_lat_lon(self, mx: float, my: float) -> (float, float):
@@ -57,7 +65,7 @@ class GoogleStaticMaps(object):
         return lat, lon
 
     def _meters_to_pixels(self, mx, my):
-        res = get_resolution(self.zoom)
+        res = self._get_resolution(self.zoom)
         px = (mx + origin_shift) / res
         py = (my + origin_shift) / res
         return px, py
@@ -101,6 +109,10 @@ class GoogleStaticMaps(object):
         return description
 
     def save_meta_data(self, output_dir="../data/output/google_static_maps/info/") -> None:
+        """Save the meta data for this aerial image"""
+        if not os.path.isdir(output_dir):
+            os.makedirs(output_dir)
+
         description = self.describe()
         identifier = self.get_identifier()
         filename = output_dir + identifier + ".txt"
