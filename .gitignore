@@ -137,3 +137,6 @@ data/output/google_static_maps/images/*.png
 data/output/google_static_maps/masks/*.png
 data/output/google_static_maps/masks/*.xml
 data/output/google_static_maps/info/*.txt
+
+*.png
+*.txt
