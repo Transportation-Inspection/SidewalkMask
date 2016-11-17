@@ -6,6 +6,13 @@ from StreetEdge import StreetEdge
 from geoalchemy2.shape import to_shape
 
 
+from shapely.geometry import LineString
+from shapely.ops import transform
+from functools import partial
+import pyproj
+
+from scipy.spatial import KDTree
+
 def test():
     gsm = GoogleStaticMaps(38.910779, -77.046662)
     gsmm = GoogleStaticMapsMask(gsm)
@@ -50,10 +57,20 @@ def test():
 
 def data_1000():
     # Latlngs from ST_MakeEnvelope(-77.040, 38.890, -77.005, 38.911, 4326)
+    project = partial(
+        pyproj.transform,
+        pyproj.Proj(init='EPSG:4326'),
+        pyproj.Proj(init='EPSG:26917')
+    )
+
     bounding_box = BoundingBox(38.890, -77.040, 38.911, -77.005)
     query = StreetEdge.fetch_street_edges_intersecting(bounding_box)
-    for poly in query:
-        print(to_shape(poly.geom))
+
+    segments = [to_shape(segment.geom) for segment in query]
+    # to_shape(poly.geom)
+    for segment in segments:
+        transformed_segment = transform(project, segment)
+        print(transformed_segment.length)
 
 
 if __name__ == '__main__':
