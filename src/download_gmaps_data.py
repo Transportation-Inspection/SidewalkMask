@@ -1,5 +1,9 @@
+from BoundingBox import BoundingBox
 from GoogleStaticMaps import GoogleStaticMaps
 from GoogleStaticMapsMask import GoogleStaticMapsMask
+from StreetEdge import StreetEdge
+
+from geoalchemy2.shape import to_shape
 
 
 def test():
@@ -11,7 +15,7 @@ def test():
     gsmm.save_google_static_maps_mask_image()
 
 
-def main():
+def test():
     latlngs = [
         (38.905236, -77.053984),
         (38.905261, -77.053319),
@@ -44,5 +48,13 @@ def main():
         gsm.save_meta_data()
         # gsmm.save_google_static_maps_mask_image()
 
+def data_1000():
+    # Latlngs from ST_MakeEnvelope(-77.040, 38.890, -77.005, 38.911, 4326)
+    bounding_box = BoundingBox(38.890, -77.040, 38.911, -77.005)
+    query = StreetEdge.fetch_street_edges_intersecting(bounding_box)
+    for poly in query:
+        print(to_shape(poly.geom))
+
+
 if __name__ == '__main__':
-    main()
+    data_1000()
