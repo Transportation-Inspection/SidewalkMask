@@ -4,6 +4,8 @@ import os
 import rasterio
 from geoalchemy2.shape import to_shape
 from rasterio import features, Affine
+from typing import List
+from shapely.geometry import MultiPolygon
 from GoogleStaticMaps import GoogleStaticMaps
 from RoadPolygon import RoadPolygon
 from SidewalkPolygon import SidewalkPolygon
@@ -84,15 +86,24 @@ class GoogleStaticMapsMask(object):
             dst.write(road_raster, indexes=1)
         return
 
-    def _rasterize_polygons(self, polygons, affine):
-        out = features.rasterize(
-            polygons,
-            transform=affine,
-            out_shape=(
-                self.google_static_maps.image_w,
-                self.google_static_maps.image_h
+    def _rasterize_polygons(self, polygons: List[MultiPolygon], affine: Affine) -> np.ndarray:
+        """
+
+        :param polygons: A list of shapely polygons
+        :param affine: An affine transformation matrix
+        :return: Returns im_w x im_h ndarray.
+        """
+        if polygons:
+            out = features.rasterize(
+                polygons,
+                transform=affine,
+                out_shape=(
+                    self.google_static_maps.image_w,
+                    self.google_static_maps.image_h
+                )
             )
-        )
+        else:
+            out = np.zeros((self.google_static_maps.image_h, self.google_static_maps.image_w)).astype(np.uint8)
         return out
 
 
