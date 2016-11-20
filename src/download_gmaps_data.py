@@ -1,7 +1,12 @@
 from BoundingBox import BoundingBox
 from GoogleStaticMaps import GoogleStaticMaps
 from GoogleStaticMapsMask import GoogleStaticMapsMask
+from RTreeIndex import RTreeIndex
 from StreetEdge import StreetEdge
+
+import logging
+from tqdm import tqdm
+# logging.basicConfig(level=logging.INFO)
 
 from geoalchemy2.shape import to_shape
 
@@ -11,7 +16,6 @@ from shapely.ops import transform
 from functools import partial
 import pyproj
 
-from rtree import index
 import math
 
 def test():
@@ -54,70 +58,66 @@ def test():
 
         gsm.fetch_google_static_maps_image()
         gsm.save_meta_data()
-        # gsmm.save_google_static_maps_mask_image()
+        gsmm.save_google_static_maps_mask_image()
+
+def get_latlngs(name):
+    if name == "data_1000":
+        # Latlngs from ST_MakeEnvelope(-77.040, 38.890, -77.005, 38.911, 4326)
+        distance_threshold_m = 80  # meters
+        project_4326_to_26917 = partial(
+            pyproj.transform,
+            pyproj.Proj(init='EPSG:4326'),
+            pyproj.Proj(init='EPSG:26917')
+        )
+
+        project_26917_to_4326 = partial(
+            pyproj.transform,
+            pyproj.Proj(init='EPSG:26917'),
+            pyproj.Proj(init='EPSG:4326')
+        )
+
+        bounding_box = BoundingBox(38.890, -77.040, 38.911, -77.005)
+        query = StreetEdge.fetch_street_edges_within(bounding_box)
+
+        # Split each segment queried into a set of points that are reasonably far away from each other.
+        rtidx = RTreeIndex()
+        segments = [to_shape(segment.geom) for segment in query]
+        for segment in segments:
+            projected_segment = transform(project_4326_to_26917, segment)
+            length_m = projected_segment.length
+            num_split = math.ceil(length_m / distance_threshold_m)
+
+            piece_length_m = length_m / num_split
+
+            for idx in range(num_split + 1):
+                p = projected_segment.interpolate(idx * piece_length_m)
+
+                # check if there are nearby points
+                result = rtidx.query_points_within(p, distance_threshold_m / 2)
+                if len(result) == 0:
+                    logging.info("Insert a point")
+                    rtidx.insert(p)
+                else:
+                    logging.info("There are nearby points already in the data")
+
+        points = rtidx.get_all()
+        latlngs = [transform(project_26917_to_4326, p) for p in points]
+        return latlngs
+    else:
+        return []
 
 def data_1000():
-    # Latlngs from ST_MakeEnvelope(-77.040, 38.890, -77.005, 38.911, 4326)
-    distance_threshold_m = 80  # meters
-    project_4326_to_26917 = partial(
-        pyproj.transform,
-        pyproj.Proj(init='EPSG:4326'),
-        pyproj.Proj(init='EPSG:26917')
-    )
+    latlngs = get_latlngs("data_1000")
+    len(latlngs)
+    for latlng in tqdm(latlngs):
+        gsm = GoogleStaticMaps(latlng.y, latlng.x)
+        gsmm = GoogleStaticMapsMask(gsm)
 
-    project_26917_to_4326 = partial(
-        pyproj.transform,
-        pyproj.Proj(init='EPSG:26917'),
-        pyproj.Proj(init='EPSG:4326')
-    )
+        # gsm.fetch_google_static_maps_image()
+        # gsm.save_meta_data()
+        # gsmm.save_google_static_maps_mask_image()
 
-    bounding_box = BoundingBox(38.890, -77.040, 38.911, -77.005)
-    query = StreetEdge.fetch_street_edges_intersecting(bounding_box)
-
-    # rtree index
-    # rt_idx = RTreeIndex()
-
-    segments = [to_shape(segment.geom) for segment in query]
-    for segment in segments:
-        projected_segment = transform(project_4326_to_26917, segment)
-        length_m = projected_segment.length
-        num_split = math.ceil(length_m / distance_threshold_m)
-
-
-        piece_length_m = length_m / num_split
-        print(length_m, piece_length_m)
-
-        for idx in range(num_split + 1):
-            p = projected_segment.interpolate(idx * piece_length_m)
-
-            print(p)
-
-        print()
-
-        # num_split = math.ceil(transformed_segment.length / distance_threshold_m) + 1
-
-class RTreeIndex(object):
-    def __init__(self):
-        self.idx = index.Index()
-        self.counter = 1
-
-    def insert(self, point):
-        bounds = (point.x, point.y, point.x, point.y)
-        self.idx.insert(self.counter, bounds=bounds, obj=point)
-        self.counter += 1
-
-    def query_points_within(self, point, distance_m=40):
-        x_min = point.x - distance_m / 2
-        x_max = point.x + distance_m / 2
-        y_min = point.y - distance_m / 2
-        y_max = point.y + distance_m / 2
-        bounds = (x_min, y_min, x_max, y_max)
-        result = self.idx.intersection(bounds, object=True)
-
-        def dist(x, y):
-            return math.sqrt((point.x - x) ** 2 + (point.y - y) ** 2)
-
-        []
+    return
 
 
 if __name__ == '__main__':

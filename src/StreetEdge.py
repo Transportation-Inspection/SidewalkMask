@@ -38,7 +38,7 @@ class StreetEdge(Base):
 
     @classmethod
     def select_street_edge(cls, session, street_edge_id):
-        street_edge = session.query(StreetEdgeTable).filter_by(street_edge_id=street_edge_id).first()
+        street_edge = session.query(StreetEdge).filter_by(street_edge_id=street_edge_id).first()
         return street_edge
 
     @staticmethod
@@ -48,14 +48,7 @@ class StreetEdge(Base):
         Reference
         http://geoalchemy-2.readthedocs.io/en/0.3/orm_tutorial.html#spatial-query
         """
-        envelope = """POLYGON(( %f %f, %f %f, %f %f, %f %f, %f %f ))""" % (
-                    bounding_box.west, bounding_box.south,
-                    bounding_box.west, bounding_box.north,
-                    bounding_box.east, bounding_box.north,
-                    bounding_box.east, bounding_box.south,
-                    bounding_box.west, bounding_box.south
-                )
-        envelope_geom = func.ST_GeomFromText(envelope, 4326)
+        envelope_geom = StreetEdge._envelope(bounding_box, geom=True)
         query = session.query(StreetEdge).filter(
             func.ST_Intersects(
                 func.ST_Transform(StreetEdge.geom, 4326),
@@ -63,6 +56,33 @@ class StreetEdge(Base):
             )
         )
         return query
+
+    @staticmethod
+    def fetch_street_edges_within(bounding_box):
+        envelope_geom = StreetEdge._envelope(bounding_box, geom=True)
+        query = session.query(StreetEdge).filter(
+            func.ST_Within(
+                func.ST_Transform(StreetEdge.geom, 4326),
+                envelope_geom
+            )
+        )
+        return query
+
+    @staticmethod
+    def _envelope(bounding_box, geom=True):
+        envelope = """POLYGON(( %f %f, %f %f, %f %f, %f %f, %f %f ))""" % (
+            bounding_box.west, bounding_box.south,
+            bounding_box.west, bounding_box.north,
+            bounding_box.east, bounding_box.north,
+            bounding_box.east, bounding_box.south,
+            bounding_box.west, bounding_box.south
+        )
+        if geom:
+            return func.ST_GeomFromText(envelope, 4326)
+        else:
+            return envelope
+        return
+
 
 
 def main():
