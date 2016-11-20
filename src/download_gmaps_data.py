@@ -6,7 +6,7 @@ from StreetEdge import StreetEdge
 
 import logging
 from tqdm import tqdm
-# logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO)
 
 from geoalchemy2.shape import to_shape
 
@@ -95,10 +95,10 @@ def get_latlngs(name):
                 # check if there are nearby points
                 result = rtidx.query_points_within(p, distance_threshold_m / 2)
                 if len(result) == 0:
-                    logging.info("Insert a point")
+                    logging.debug("Insert a point")
                     rtidx.insert(p)
                 else:
-                    logging.info("There are nearby points already in the data")
+                    logging.debug("There are nearby points already in the data")
 
         points = rtidx.get_all()
         latlngs = [transform(project_26917_to_4326, p) for p in points]
@@ -113,9 +113,9 @@ def data_1000():
         gsm = GoogleStaticMaps(latlng.y, latlng.x)
         gsmm = GoogleStaticMapsMask(gsm)
 
-        # gsm.fetch_google_static_maps_image()
-        # gsm.save_meta_data()
-        # gsmm.save_google_static_maps_mask_image()
+        gsm.fetch_google_static_maps_image()
+        gsm.save_meta_data()
+        gsmm.save_google_static_maps_mask_image()
 
     return
 

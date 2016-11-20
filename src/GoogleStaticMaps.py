@@ -4,6 +4,7 @@ import math
 import os
 import urllib.request
 from collections import namedtuple
+import logging
 
 BoundingCoordinates = namedtuple('BoundingCoordinates', ['nw', 'ne', 'sw', 'se'])
 LatLng = namedtuple('LatLng', ['lat', 'lng'])
@@ -47,7 +48,11 @@ class GoogleStaticMaps(object):
         url = self._get_google_static_maps_url()
         identifier = self.get_identifier()
         output_filename = output_dir + identifier + ".png"
-        urllib.request.urlretrieve(url, output_filename)
+
+        if os.path.isfile(output_filename):
+            logging.info("The file already exists: %s" % output_filename)
+        else:
+            urllib.request.urlretrieve(url, output_filename)
         return
 
     def _get_resolution(self, zoom: int) -> float:
@@ -116,8 +121,12 @@ class GoogleStaticMaps(object):
         description = self.describe()
         identifier = self.get_identifier()
         filename = output_dir + identifier + ".txt"
-        with open(filename, 'w') as f:
-            f.write(description)
+
+        if os.path.isfile(filename):
+            logging.info("The file already exists: %s" % filename)
+        else:
+            with open(filename, 'w') as f:
+                f.write(description)
         return
 
 

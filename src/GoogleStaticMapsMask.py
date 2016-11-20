@@ -1,3 +1,4 @@
+import logging
 import numpy as np
 import os
 import rasterio
@@ -25,10 +26,17 @@ class GoogleStaticMapsMask(object):
         affine_transform = affine_scale * affine_translate
         return affine_transform
 
-    def save_google_static_maps_mask_image(self, output_dir="../data/output/google_static_maps/masks/"):
+    def save_google_static_maps_mask_image(self, output_dir="../data/output/google_static_maps/masks/") -> None:
         """Save the mask image"""
         if not os.path.isdir(output_dir):
             os.makedirs(output_dir)
+
+        identifier = self.google_static_maps.get_identifier()
+        filename = output_dir + identifier + '.png'
+
+        if os.path.isfile(filename):
+            logging.info("The file already exists: %s" % filename)
+            return
 
         bounding_box = self.google_static_maps.get_image_bounding_box()
 
@@ -64,8 +72,6 @@ class GoogleStaticMapsMask(object):
         road_raster[np.where(sidewalk_raster > 0)] = sidewalk_raster[np.where(sidewalk_raster > 0)]
 
         # Save file
-        identifier = self.google_static_maps.get_identifier()
-        filename = output_dir + identifier + '.png'
         with rasterio.open(
                 filename,
                 'w',
