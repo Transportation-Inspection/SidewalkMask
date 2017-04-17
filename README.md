@@ -65,9 +65,9 @@ Log into the initial account with default user: `sudo -i -u postgres`. Then,
 ```
 $ createdb sidewalk_dataset
 $ psql sidewalk_dataset
-# CREATE USER sidewalk WITH PASSWORD 'sidewalk';
-# GRANT ALL PRIVILEGES ON DATABASE sidewalk_dataset TO sidewalk;
-# \q
+sidewalk_dataset# CREATE USER sidewalk WITH PASSWORD 'sidewalk';
+sidewalk_dataset# GRANT ALL PRIVILEGES ON DATABASE sidewalk_dataset TO sidewalk;
+sidewalk_dataset# \q
 ```
 Now create postgis extension for your database.
 ```
@@ -86,17 +86,51 @@ sidewalk_dataset=#  COPY spatial_ref_sys FROM '/home/pothole/Downloads/spatial_r
 ```
 
 ##### Export shapefile into .sql
-First, decide SRID using this [website](http://prj2epsg.org/search) by uploading the .prj file. For GCS_WGS_1984, the SRID is 4326. Now convert your shapefile into .sql file.
-```
-$ shp2pgsql -s <SRID> <shapefile> <schema>.<tablename> <db_name> > filename.sql
+First, decide SRID using this [website](http://prj2epsg.org/search) by uploading the .prj file. For GCS_WGS_1984, the SRID is 4326. Now convert your shapefile into .sql file. `shp2pgsql -s <SRID> <shapefile> <schema>.<tablename> <db_name> > filename.sql`
+
+``` 
+$ shp2pgsql -s 4326 /media/pothole/TOSHIBA/DC_roads_all/Roads_All.shp dc.sidewalk_test sidewalk_dataset > sidewalk_test.sql
 $ sudo -u sidewalk psql -d sidewalk_dataset -a -f filename.sql
 ```
 If succeeded, you should see the tablename in your database.
 ```
 sidewalk_dataset=# \dt
+               List of relations
+  Schema  |      Name       | Type  |  Owner
+----------+-----------------+-------+----------
+ public   | spatial_ref_sys | table | postgres
+ topology | layer           | table | postgres
+ topology | topology        | table | postgres
+(3 rows)
+
 sidewalk_dataset=# \dn
+   List of schemas
+   Name   |  Owner
+----------+----------
+ dc       | sidewalk
+ public   | postgres
+ sidewalk | sidewalk
+ topology | postgres
+(4 rows)
+
 sidewalk_dataset=# \l
+                                     List of databases
+       Name       |  Owner   | Encoding |   Collate   |    Ctype    |   Access privileges
+------------------+----------+----------+-------------+-------------+-----------------------
+ postgres         | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 |
+ sidewalk         | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 |
+ sidewalk_dataset | sidewalk | UTF8     | en_US.UTF-8 | en_US.UTF-8 | =Tc/sidewalk         +
+                  |          |          |             |             | sidewalk=CTc/sidewalk
+ template0        | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 | =c/postgres          +
+                  |          |          |             |             | postgres=CTc/postgres
+ template1        | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 | =c/postgres          +
+                  |          |          |             |             | postgres=CTc/postgres
+(5 rows)
+
 ```
+##### Export pgsql to shapefile:
+`pgsql2shp -f "sidewalk_polygon" -h localhost -u sidewalk -P sidewalk sidewalk_dataset dc.sidewalk_polygon` to virualize and verify the data.
+
 ## Running the code
 Create your own API KEY to access the google satellite images [here](https://developers.google.com/maps/documentation/static-maps/get-api-key).
 Paste in to the script.

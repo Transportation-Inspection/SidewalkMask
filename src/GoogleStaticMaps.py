@@ -34,7 +34,7 @@ class GoogleStaticMaps(object):
         zoom = "zoom=%d" % self.zoom
         size = "size=%dx%d" % (self.image_h, self.image_w)
         map_type = "maptype=satellite"
-        key = "AIzaSyAErrAIxL1j5_h3AMjWCuaHdAiy3Em5Erg"
+        key = "key=AIzaSyBM-B6iLF3Mm8eeHf1oyWKplx8O4SkiqGE"
         parameters = [latlng_center, zoom, size, map_type, key]
 
         url += "&".join(parameters)

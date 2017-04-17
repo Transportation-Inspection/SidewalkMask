@@ -18,6 +18,7 @@ session = Session()
 
 class SidewalkPolygon(Base):
     __tablename__ = 'sidewalk_polygon'
+    __table_args__ = {'schema' : 'dc'}
     sidewalk_polygon_id = Column('sidewalk_polygon_id', Integer, primary_key=True)
     geom = Column('geom', Geometry('MULTIPOLYGON', srid=100000))
     gis_id = Column('gis_id', Integer)

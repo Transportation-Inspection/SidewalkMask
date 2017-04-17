@@ -18,6 +18,7 @@ session = Session()
 
 class RoadPolygon(Base):
     __tablename__ = 'road_polygon'
+    __table_args__ = {'schema' : 'dc'}
     road_polygon_id = Column('road_polygon_id', Integer, primary_key=True)
     geom = Column('geom', Geometry('MULTIPOLYGON', srid=4326))
     object_id = Column('object_id', Integer)
