@@ -22,11 +22,14 @@ It's also recommended to install:
 
 ### Installing
 ##### Start Virtualenv
-It's recommended (optional) to run your program in virtualenv:
+It's recommended (optional) to create and run your program in virtualenv:
 ```
 virtualenv -p /usr/bin/python3 py3env-sidewalk
 source py3env-sidewalk/bin/activate
 ```
+Use 'deactivate' to quit virtualenv.
+After the first time setup, use `source py3env-sidewalk/bin/activate` to start the virtualenv and run the program. It's important to start the virtualenv under the correct folder (aka SidewalkMask), otherwise some modules won't be accessible.
+
 ##### Install python packages
 Browse to SidewalkMask directory, install all packages with pip:
 ```
